@@ -1,0 +1,113 @@
+# =============================================================================
+# CUSTOM DATASET CONFIGURATION
+#
+# Use this file when you want to run inference or train on YOUR OWN images
+# instead of (or in addition to) RUGD.
+#
+# HOW TO USE
+# ----------
+# 1. Copy this file and rename it, e.g.: configs/my_robot_data.yaml
+# 2. Fill in the paths and settings below.
+# 3. Run inference:
+#      uv run python infer_custom.py --config configs/my_robot_data.yaml \
+#                                    --checkpoint runs/.../best.pt \
+#                                    --input /path/to/images/
+#
+# For a full guide see: docs/CUSTOM_DATASET_GUIDE.md
+#                       docs/INFERENCE_GUIDE.md
+# =============================================================================
+
+# --- Your dataset ---
+dataset:
+  # Path to a folder of images (JPG, PNG, BMP, TIFF supported).
+  # Can also be a single image or video file.
+  image_dir: "my_data/images"
+
+  # OPTIONAL: path to a folder of label masks (same filenames as images).
+  # Only needed if you have ground-truth annotations.
+  # Set to null for purely unlabelled inference.
+  label_dir: null                 # e.g. "my_data/labels"
+
+  # OPTIONAL: path to a text file listing image paths (one per line).
+  # Leave null to use all images found in image_dir recursively.
+  file_list: null                 # e.g. "my_data/val_files.txt"
+
+  # Image extensions to scan for (case-insensitive).
+  extensions: ["jpg", "jpeg", "png", "bmp", "tiff", "tif"]
+
+# --- Model settings ---
+# Must match the checkpoint you are loading.
+model:
+  encoder: "resnet101"            # backbone used during training
+  num_classes: 25                 # 25 for RUGD-pretrained checkpoints
+
+  # Path to the checkpoint.
+  checkpoint: "runs/deeplabv3plus_rugd/checkpoints/best.pt"
+
+# --- Inference settings ---
+infer:
+  # Resize images to this (H, W) before passing to the model.
+  # Use the same size as during training for best results.
+  image_size: [512, 512]
+
+  # Batch size for inference (increase if you have GPU memory to spare).
+  batch_size: 4
+
+  # Number of DataLoader workers.
+  num_workers: 4
+
+  # Where to save inference outputs.
+  output_dir: "inference_output"
+
+  # Output format:
+  #   "mask"    — save raw class-index PNG (lossless, for downstream use)
+  #   "colour"  — save colourised class mask PNG
+  #   "overlay" — save colourised mask blended over original image
+  #   "all"     — save all three
+  save_format: "overlay"
+
+  # Blend alpha for "overlay" format (0 = original only, 1 = mask only).
+  overlay_alpha: 0.55
+
+  # For video input: output FPS (null = match source FPS).
+  video_fps: null
+
+# --- Unlabelled metrics ---
+# Metrics computed WITHOUT ground-truth labels.
+# All are saved to output_dir/inference_metrics.json
+unlabelled_metrics:
+  # Compute pixel-wise Shannon entropy (uncertainty) map for each image.
+  save_entropy_maps: true
+
+  # Fraction of pixels below this confidence → "uncertain"
+  low_conf_threshold: 0.6
+
+  # Benchmark inference speed (FPS) on your hardware.
+  benchmark_fps: true
+  benchmark_warmup: 5
+  benchmark_runs: 20
+
+# --- Labelled metrics (optional) ---
+# Only used if label_dir is set.
+labelled_metrics:
+  # Run full evaluation and generate the metrics report.
+  generate_report: true
+
+  # Save side-by-side image|GT|prediction comparison images.
+  save_comparisons: true
+
+# --- Class remapping (advanced) ---
+# If you trained on RUGD but want to evaluate on a different class set,
+# define a mapping: {original_class_name: new_class_name}.
+# All unmapped classes default to "void".
+# Leave null to use the original class set unchanged.
+#
+# Example — collapse all ground classes into one:
+#   remap:
+#     dirt: ground
+#     sand: ground
+#     grass: ground
+#     asphalt: ground
+#     gravel: ground
+#
+remap: null

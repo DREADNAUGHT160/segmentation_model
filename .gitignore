@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+
+# uv / virtual environments
+.venv/
+.env
+
+# PyTorch checkpoints and large binaries
+runs/
+*.pt
+*.pth
+*.ckpt
+
+# Dataset — large image/annotation files (download separately)
+data/RUGD/
+
+# Inference outputs
+inference_output/
+eval_vis/
+results/
+
+# W&B
+wandb/
+
+# Charts and generated reports (reproducible — not tracked)
+*.png
+*.pdf
+metrics_summary.txt
+metrics.json
+inference_metrics.json
+
+# macOS
+.DS_Store
+.AppleDouble
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Editor
+.idea/
+.vscode/
+*.swp

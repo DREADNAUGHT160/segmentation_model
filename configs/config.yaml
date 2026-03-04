@@ -1,0 +1,60 @@
+# =============================================================================
+# Training configuration for DeepLabV3+ on RUGD
+# Override any value via CLI: --key value (see train.py --help)
+# =============================================================================
+
+# --- Dataset ---
+data:
+  root_dir: "data/RUGD"          # Path to the RUGD root directory
+  image_size: [512, 512]          # [H, W] — resize all images to this
+  num_classes: 25                 # Fixed: 25 RUGD semantic classes (per RUGD_annotation-colormap.txt)
+  num_workers: 4                  # DataLoader workers (increase on HPC)
+  pin_memory: true                # Faster GPU transfer; set false if OOM
+
+# --- Model ---
+model:
+  encoder: "resnet101"            # Backbone encoder (see smp docs for options)
+  encoder_weights: "imagenet"     # Pretrained weights: "imagenet" or null
+  in_channels: 3                  # RGB input
+  activation: null                # No activation — raw logits for CE loss
+
+# --- Training ---
+train:
+  epochs: 100
+  batch_size: 8                   # Per-GPU batch size
+  grad_accum_steps: 1             # Effective batch = batch_size * grad_accum_steps
+  learning_rate: 0.007            # Initial LR (SGD) or 1e-4 (AdamW)
+  optimizer: "sgd"                # "sgd" or "adamw"
+  momentum: 0.9                   # SGD momentum (ignored for adamw)
+  weight_decay: 4.0e-5
+  scheduler: "poly"               # "poly" (polynomial decay) or "cosine"
+  poly_power: 0.9                 # Power for polynomial LR decay
+  warmup_epochs: 5                # Linear LR warmup (0 to disable)
+  use_amp: true                   # Automatic mixed precision (requires CUDA)
+  clip_grad_norm: 1.0             # Max gradient norm (0 to disable)
+  use_class_weights: true         # Weight CE loss by inverse class frequency
+
+# --- Checkpointing & Logging ---
+output:
+  run_dir: "runs"                 # All runs saved under runs/<run_name>/
+  run_name: "deeplabv3plus_rugd"  # Subfolder name for this experiment
+  save_every: 5                   # Save checkpoint every N epochs
+  log_every: 10                   # Log training metrics every N batches
+
+# --- Weights & Biases ---
+# Set enabled: true and run `wandb login` once before training.
+# On HPC: set WANDB_API_KEY environment variable (see hpc/launch.sh).
+wandb:
+  enabled: false                  # flip to true to activate W&B logging
+  project: "rugd-segmentation"   # W&B project name
+  entity: null                    # your W&B username or team (null = default)
+  log_images_every: 5             # log prediction grid to W&B every N epochs
+  watch_model: true               # log model gradients + parameter histograms
+  tags: ["deeplabv3+", "resnet101", "rugd"]
+
+# --- Inference ---
+infer:
+  checkpoint: null                # Path to .pt checkpoint (required)
+  threshold: 0.5                  # Only used for binary tasks
+  video_fps: null                 # Output FPS for video (null = match input)
+  alpha: 0.5                      # Overlay blend alpha for visualization
