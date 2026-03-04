@@ -62,6 +62,12 @@ def build_model(
         model = build_model(num_classes=24)
         logits = model(images)  # shape: (B, 24, H, W)
     """
+    import os
+    os.environ["TRANSFORMERS_OFFLINE"] = "1"
+    os.environ["HF_DATASETS_OFFLINE"] = "1"
+    os.environ["HF_HUB_OFFLINE"] = "1"
+    os.environ.setdefault("HF_HOME", "/home/phd_li/hf_cache")
+
     model = smp.DeepLabV3Plus(
         encoder_name=encoder,
         encoder_weights=encoder_weights,
