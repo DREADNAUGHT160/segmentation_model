@@ -362,14 +362,15 @@ def main() -> None:
         print(f"  GPU: {torch.cuda.get_device_name(0)}")
 
     # ------------------------------------------------------------------
-    # Output directories
+    # Output directories — always write under the submitting user's home
+    # so bsub jobs (which run as the personal account) have write access.
     # ------------------------------------------------------------------
-    run_dir_raw = cfg["output"]["run_dir"]
-    if not os.path.isabs(run_dir_raw):
-        run_dir_raw = os.path.join(PROJECT_DIR, run_dir_raw)
-    run_dir = Path(run_dir_raw) / cfg["output"]["run_name"]
+    USER_HOME = os.path.expanduser("~")
+    run_dir = Path(USER_HOME) / "segmentation_model" / "runs" / cfg["output"]["run_name"]
     ckpt_dir = run_dir / "checkpoints"
-    vis_dir = run_dir / "vis"
+    vis_dir  = run_dir / "vis"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    (run_dir / "tb_logs").mkdir(parents=True, exist_ok=True)
     ckpt_dir.mkdir(parents=True, exist_ok=True)
     vis_dir.mkdir(parents=True, exist_ok=True)
 
