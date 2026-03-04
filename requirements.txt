@@ -1,0 +1,13 @@
+torch
+torchvision
+segmentation-models-pytorch
+numpy
+pillow
+opencv-python-headless
+albumentations
+pyyaml
+tqdm
+tensorboard
+matplotlib
+wandb
+huggingface-hub

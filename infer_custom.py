@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Optional
@@ -44,7 +45,8 @@ import torch
 import yaml
 from torch.utils.data import DataLoader
 
-sys.path.insert(0, str(Path(__file__).parent))
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, PROJECT_DIR)
 
 from data.custom_dataset import CustomImageDataset
 from data.rugd_dataset import RUGD_CLASSES, RUGD_COLORMAP
@@ -400,7 +402,7 @@ def main() -> None:
     print(f"Dataset: {len(dataset)} images  (labels: {has_labels})")
 
     # ---- output dir ----
-    output_dir = Path(infer_cfg.get("output_dir", "inference_output"))
+    output_dir = Path(infer_cfg.get("output_dir", os.path.join(PROJECT_DIR, "inference_output")))
     output_dir.mkdir(parents=True, exist_ok=True)
     print(f"Output directory: {output_dir}")
 

@@ -34,6 +34,8 @@ import os
 from pathlib import Path
 from typing import Optional
 
+PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # segmentation_model/
+
 from huggingface_hub import hf_hub_download, list_repo_files
 from tqdm import tqdm
 
@@ -120,8 +122,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Download RUGD dataset from HuggingFace")
     parser.add_argument(
         "--output",
-        default="data/RUGD",
-        help="Root directory to download RUGD into (default: data/RUGD)",
+        default=os.path.join(PROJECT_DIR, "data", "RUGD"),
+        help="Root directory to download RUGD into (default: <project>/data/RUGD)",
     )
     parser.add_argument(
         "--full",

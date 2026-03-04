@@ -33,9 +33,14 @@ from torch.utils.tensorboard import SummaryWriter
 import yaml
 
 # ---------------------------------------------------------------------------
+# Project root — all relative paths are resolved from here
+# ---------------------------------------------------------------------------
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# ---------------------------------------------------------------------------
 # Local imports
 # ---------------------------------------------------------------------------
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, PROJECT_DIR)
 
 from data.rugd_dataset import RUGDDataset, RUGD_CLASSES, IGNORE_INDEX, RUGD_COLORMAP
 from models.deeplabv3plus import build_model, save_checkpoint
@@ -330,7 +335,7 @@ def validate(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Train DeepLabV3+ on RUGD")
-    parser.add_argument("--config", default="configs/config.yaml")
+    parser.add_argument("--config", default=os.path.join(PROJECT_DIR, "configs", "config.yaml"))
     parser.add_argument("--data_root", help="Override data.root_dir")
     parser.add_argument("--run_name", help="Override output.run_name")
     parser.add_argument("--epochs", type=int)
@@ -359,7 +364,10 @@ def main() -> None:
     # ------------------------------------------------------------------
     # Output directories
     # ------------------------------------------------------------------
-    run_dir = Path(cfg["output"]["run_dir"]) / cfg["output"]["run_name"]
+    run_dir_raw = cfg["output"]["run_dir"]
+    if not os.path.isabs(run_dir_raw):
+        run_dir_raw = os.path.join(PROJECT_DIR, run_dir_raw)
+    run_dir = Path(run_dir_raw) / cfg["output"]["run_name"]
     ckpt_dir = run_dir / "checkpoints"
     vis_dir = run_dir / "vis"
     ckpt_dir.mkdir(parents=True, exist_ok=True)
@@ -420,6 +428,10 @@ def main() -> None:
         num_classes=cfg["data"]["num_classes"],
         activation=cfg["model"]["activation"],
     ).to(device)
+
+    if torch.cuda.device_count() > 1:
+        print(f"  Using {torch.cuda.device_count()} GPUs (DataParallel)")
+        model = nn.DataParallel(model)
 
     wandb_watch_model(model, cfg, wb_active)
 
@@ -550,18 +562,19 @@ def main() -> None:
             history["train_loss"].append(train_loss)
             history["lr"].append(current_lr)
 
-        # Checkpointing
+        # Checkpointing — unwrap DataParallel so checkpoints are portable
+        _model = model.module if isinstance(model, nn.DataParallel) else model
         extra = {"global_step": global_step}
-        save_checkpoint(model, optimizer, epoch, best_miou, str(ckpt_dir / "latest.pt"), extra)
+        save_checkpoint(_model, optimizer, epoch, best_miou, str(ckpt_dir / "latest.pt"), extra)
 
         if miou > best_miou:
             best_miou = miou
-            save_checkpoint(model, optimizer, epoch, best_miou, str(ckpt_dir / "best.pt"), extra)
+            save_checkpoint(_model, optimizer, epoch, best_miou, str(ckpt_dir / "best.pt"), extra)
             print(f"  *** New best mIoU: {best_miou:.4f} — saved best.pt ***")
 
         if (epoch + 1) % cfg["output"]["save_every"] == 0:
             save_checkpoint(
-                model, optimizer, epoch, best_miou,
+                _model, optimizer, epoch, best_miou,
                 str(ckpt_dir / f"epoch_{epoch + 1:04d}.pt"), extra,
             )
 

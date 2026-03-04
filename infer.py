@@ -19,6 +19,7 @@ Overlay (blended) instead of pure mask:
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -29,7 +30,8 @@ from PIL import Image
 
 import yaml
 
-sys.path.insert(0, str(Path(__file__).parent))
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, PROJECT_DIR)
 
 from data.rugd_dataset import RUGD_COLORMAP
 from models.deeplabv3plus import load_checkpoint
@@ -220,7 +222,7 @@ def main() -> None:
     parser.add_argument("--checkpoint", required=True, help="Path to .pt checkpoint")
     parser.add_argument("--input", required=True, help="Input: image, directory, or video")
     parser.add_argument("--output", required=True, help="Output path")
-    parser.add_argument("--config", default="configs/config.yaml")
+    parser.add_argument("--config", default=os.path.join(PROJECT_DIR, "configs", "config.yaml"))
     parser.add_argument("--overlay", action="store_true", help="Blend mask over original image")
     parser.add_argument("--alpha", type=float, default=0.5, help="Overlay blend factor [0–1]")
     parser.add_argument("--video_fps", type=float, default=None, help="Override output FPS")
@@ -229,8 +231,11 @@ def main() -> None:
     with open(args.config) as f:
         cfg = yaml.safe_load(f)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Device: {device}")
+    device = torch.device(
+        "cuda" if torch.cuda.is_available() else
+        "mps"  if torch.backends.mps.is_available() else "cpu"
+    )
+    print(f"Using device: {device}")
 
     model, _ = load_checkpoint(
         checkpoint_path=args.checkpoint,

@@ -12,6 +12,7 @@ Also save visualisations + full metrics report:
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -21,7 +22,8 @@ from torch.utils.data import DataLoader
 
 import yaml
 
-sys.path.insert(0, str(Path(__file__).parent))
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, PROJECT_DIR)
 
 from data.rugd_dataset import RUGDDataset, RUGD_CLASSES
 from models.deeplabv3plus import load_checkpoint
@@ -92,11 +94,11 @@ def evaluate(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Evaluate DeepLabV3+ on RUGD")
     parser.add_argument("--checkpoint", required=True, help="Path to .pt checkpoint")
-    parser.add_argument("--config",     default="configs/config.yaml")
+    parser.add_argument("--config",     default=os.path.join(PROJECT_DIR, "configs", "config.yaml"))
     parser.add_argument("--split",      default="test", choices=["train", "val", "test"])
     parser.add_argument("--batch_size", type=int, default=4)
     parser.add_argument("--save_vis",   action="store_true", help="Save comparison images")
-    parser.add_argument("--vis_dir",    default="eval_vis/")
+    parser.add_argument("--vis_dir",    default=os.path.join(PROJECT_DIR, "eval_vis"))
     parser.add_argument("--report",     action="store_true",
                         help="Generate full metrics report (charts + JSON + text summary)")
     args = parser.parse_args()
